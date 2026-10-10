@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * Ellora65 VIA keymap with a host-driven OLED display.
  *
  * The OLED (128x32, rotated to a 32x128 portrait strip) cycles through these
- * modes with Fn + \ :
+ * modes with DISP_MODE (QK_USER_0, the key right of Up by default):
  *   CLOCK - big HH/MM digits, a seconds bar, three text lines from the host
  *           and Luna the keyboard pet underneath. Drawn by the keyboard.
  *   GIF, STATS, MUSIC - full-screen 1-bit frames drawn and streamed by the
@@ -47,13 +47,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_MPLY , KC_ESC  , KC_1    , KC_2    , KC_3    , KC_4    , KC_5    , KC_6    , KC_7    , KC_8    , KC_9    , KC_0    , KC_MINS , KC_EQL  , KC_BSPC , KC_BSPC,
     KC_9    , KC_TAB  , KC_Q    , KC_W    , KC_E    , KC_R    , KC_T    , KC_Y    , KC_U    , KC_I    , KC_O    , KC_P    , KC_LBRC , KC_RBRC , KC_BSLS,
     KC_8    , KC_CAPS , KC_A    , KC_S    , KC_D    , KC_F    , KC_G    , KC_H    , KC_J    , KC_K    , KC_L    , KC_SCLN , KC_QUOT , KC_ENT  , KC_ENT  , KC_DEL,
-    KC_7    , KC_LSFT , KC_LSFT , KC_Z    , KC_X    , KC_C    , KC_V    , KC_B    , KC_N    , KC_M    , KC_COMM , KC_DOT  , KC_SLSH , KC_RSFT , KC_UP   , QK_MACRO_0,
+    KC_7    , KC_LSFT , KC_LSFT , KC_Z    , KC_X    , KC_C    , KC_V    , KC_B    , KC_N    , KC_M    , KC_COMM , KC_DOT  , KC_SLSH , KC_RSFT , KC_UP   , DISP_MODE,
     MO(1)   , KC_LCTL , KC_LGUI , KC_LALT , MO(1)   , KC_SPC  , MO(1)   , MO(1)   , MO(1)   , KC_LEFT , KC_DOWN , KC_RGHT
   ),
 
   [1] = LAYOUT_all(
     KC_MPLY , KC_GRV  , KC_F1   , KC_F2   , KC_F3   , KC_F4   , KC_F5   , KC_F6   , KC_F7   , KC_F8   , KC_F9   , KC_F10  , KC_F11  , KC_F12  , KC_BSPC , KC_TRNS,
-    KC_6    , KC_BSPC , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , DISP_MODE,
+    KC_6    , KC_BSPC , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS,
     KC_5    , KC_ENT  , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_PGDN , KC_TRNS , KC_TRNS , KC_BSPC,
     KC_4    , MO(2)   , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , QK_MACRO_1,
     KC_F20  , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS , KC_TRNS
@@ -416,17 +416,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 cycle_display_mode();
             }
             return false;
-
-        case KC_BSLS:
-            // Fn + \ also cycles when layer 1 has KC_TRNS there, e.g. after
-            // loading an older layout into VIA.
-            if (IS_LAYER_ON(1)) {
-                if (record->event.pressed) {
-                    cycle_display_mode();
-                }
-                return false;
-            }
-            break;
 
             /* KEYBOARD PET STATUS START */
 

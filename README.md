@@ -2,7 +2,7 @@
 
 Custom VIA firmware for the Kikos Lab Ellora65 plus a small PC app that drives the OLED.
 
-**Fn + \\** cycles the screen through:
+The **key right of the Up arrow** cycles the screen through the four screens below. To move it, assign keycode `0x7E40` to another key in VIA: use *Any*, or `USER00` / *Custom 0*, depending on VIA's version.
 
 1. **Clock**: big hour/minute digits, a seconds bar, the weekday/date (and AM/PM in 12h mode), with Luna the pet underneath.
 2. **GIF**: any GIF, streamed full-screen from the PC.
@@ -109,7 +109,7 @@ The app sends custom raw HID reports over VIA's interface, which the firmware pi
 - `0xE1`: sets the time and the three text lines.
 - `0xE2`: carries a 30-byte chunk of a frame. One 512-byte frame takes 18 reports.
 - `0xE3`: hands the screen back to the keyboard's clock.
-- `0xE4`: sent by the keyboard **unprompted** when the mode changes (Fn + \\) or its screen turns on or off.
+- `0xE4`: sent by the keyboard **unprompted** when the mode changes (cycle key) or its screen turns on or off.
 
 Every reply, and every `0xE4` message, carries three things: the current mode, whether streamed frames were already showing, and whether the screen is on.
 

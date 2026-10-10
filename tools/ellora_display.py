@@ -1,7 +1,7 @@
 """Drive the Ellora65 OLED from your PC: clock, GIF, PC stats and now playing.
 
-Needs the "display" firmware from firmware/keymaps/display. Fn + \\ on the
-keyboard cycles the OLED through Clock -> GIF -> Stats -> Music. Changing the
+Needs the "display" firmware from firmware/keymaps/display. The key right of
+the Up arrow (keycode "Custom 0" / 0x7E40 in VIA) cycles the OLED through Clock -> GIF -> Stats -> Music. Changing the
 volume pops up a volume screen over any of them.
 
     python ellora_display.py                       # uses tools/input.gif (if present)
@@ -397,7 +397,7 @@ def main():
                 time.sleep(2)
                 continue
             waiting_shown = False
-            print("Connected. Fn + \\ cycles Clock -> GIF -> Stats -> Music.")
+            print("Connected. The key right of Up cycles Clock -> GIF -> Stats -> Music.")
             run(kb, gif_player, stats, media, volume, args)
         except OSError as e:
             print(f"Keyboard disconnected ({e}); reconnecting...")
