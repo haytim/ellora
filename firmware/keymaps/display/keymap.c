@@ -18,12 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /*
  * Ellora65 VIA keymap with a host-driven OLED display.
  *
- * The OLED (128x32, rotated to a 32x128 portrait strip) has two modes,
- * cycled with Fn + \ :
+ * The OLED (128x32, rotated to a 32x128 portrait strip) cycles through these
+ * modes with Fn + \ :
  *   CLOCK - big HH/MM digits, a seconds bar, three text lines from the host
- *           and Luna the keyboard pet underneath.
- *   GIF   - full-screen 1-bit frames streamed from the host app.
- *           Falls back to the clock screen when no frames arrive.
+ *           and Luna the keyboard pet underneath. Drawn by the keyboard.
+ *   GIF, STATS, MUSIC - full-screen 1-bit frames drawn and streamed by the
+ *           host app. The keyboard only reports which one is selected.
+ *
+ * Streamed frames are shown in any mode (the host uses this for the volume
+ * pop-up over the clock). When they stop arriving, or the host sends
+ * HOST_RELEASE, the clock screen comes back.
  *
  * The host app (tools/ellora_display.py) talks to the keyboard over VIA's
  * raw HID interface using the command IDs below, which VIA does not use.
@@ -89,13 +93,17 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 
 /* DISPLAY STATE START */
 
-enum display_mode { MODE_CLOCK, MODE_GIF, MODE_COUNT };
+enum display_mode { MODE_CLOCK, MODE_GIF, MODE_STATS, MODE_MUSIC, MODE_COUNT };
 
-// Raw HID commands from the host app. Every reply is [cmd, display_mode].
+// Raw HID commands from the host app.
+// Every reply is [cmd, display_mode, frames_were_live, screen_on].
 enum host_command {
     HOST_STATUS    = 0xE0, // [cmd]
     HOST_SET_TIME  = 0xE1, // [cmd, hour, min, sec, flags, 3 x 5 chars of text]
     HOST_GIF_CHUNK = 0xE2, // [cmd, chunk, 30 bytes of the 512 byte frame]
+    HOST_RELEASE   = 0xE3, // [cmd] stop showing streamed frames now
+    HOST_NOTIFY    = 0xE4, // keyboard -> host, unprompted, same layout as a reply:
+                           // sent when the mode changes or the screen turns on/off
 };
 
 #    define TIME_FLAG_12H 0x01
@@ -116,10 +124,18 @@ static uint32_t time_timer;
 static uint32_t shown_secs = UINT32_MAX;
 static char     time_text[TEXT_LINES][TEXT_CHARS + 1];
 
+// Lets the host react at once instead of polling. If no app is listening the
+// report is simply dropped.
+static void notify_host(void) {
+    uint8_t report[32] = {HOST_NOTIFY, display_mode, gif_live, is_oled_on()};
+    raw_hid_send(report, sizeof(report));
+}
+
 static void cycle_display_mode(void) {
     display_mode = (display_mode + 1) % MODE_COUNT;
     eeconfig_update_user(display_mode);
     redraw_screen = true;
+    notify_host();
 }
 
 void keyboard_post_init_user(void) {
@@ -131,6 +147,9 @@ void eeconfig_init_user(void) {
 }
 
 bool via_command_kb(uint8_t *data, uint8_t length) {
+    // Lets the host know a partial frame update would land on a cleared screen.
+    bool was_live = gif_live;
+
     switch (data[0]) {
         case HOST_STATUS:
             break;
@@ -148,7 +167,7 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
 
         case HOST_GIF_CHUNK:
             // Writing to the buffer while the screen is asleep would wake it.
-            if (display_mode == MODE_GIF && is_oled_on()) {
+            if (is_oled_on()) {
                 if (!gif_live) {
                     gif_live = true;
                     oled_clear();
@@ -161,11 +180,19 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
             }
             break;
 
+        case HOST_RELEASE:
+            if (gif_live) {
+                redraw_screen = true;
+            }
+            break;
+
         default:
             return false; // let VIA handle it
     }
 
     data[1] = display_mode;
+    data[2] = was_live;
+    data[3] = is_oled_on();
     raw_hid_send(data, length);
     return true;
 }
@@ -345,6 +372,13 @@ bool oled_task_user(void) {
 
     /* KEYBOARD PET VARIABLES END */
 
+    // Tell the host when the screen sleeps or wakes so it can stop/resume streaming.
+    static bool screen_was_on = true;
+    if (is_oled_on() != screen_was_on) {
+        screen_was_on = !screen_was_on;
+        notify_host();
+    }
+
 #    if OLED_TIMEOUT > 0
     /* constant redraws prevent the normal timeout from occuring */
     if (last_input_activity_elapsed() > OLED_TIMEOUT && last_led_activity_elapsed() > OLED_TIMEOUT) {
@@ -356,7 +390,7 @@ bool oled_task_user(void) {
     }
 #    endif
 
-    if (display_mode == MODE_GIF && gif_live && timer_elapsed32(gif_timer) > GIF_STALE_MS) {
+    if (gif_live && timer_elapsed32(gif_timer) > GIF_STALE_MS) {
         gif_live      = false;
         redraw_screen = true;
     }
