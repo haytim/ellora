@@ -2,6 +2,8 @@
 
 Custom VIA firmware for the Kikos Lab Ellora65 plus a small PC app that drives the OLED.
 
+![Ellora65 OLED screens](tools/preview.png)
+
 The **key right of the Up arrow** cycles the screen through the four screens below. To move it, assign keycode `0x7E40` to another key in VIA: use *Any*, or `USER00` / *Custom 0*, depending on VIA's version.
 
 1. **Clock**: big hour/minute digits, a seconds bar, the weekday/date (and AM/PM in 12h mode), with Luna the pet underneath.
