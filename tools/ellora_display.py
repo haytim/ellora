@@ -369,6 +369,7 @@ def main():
     if sys.stdout:  # None under pythonw; don't crash printing non-Latin song titles
         sys.stdout.reconfigure(errors="replace")
 
+    args.gifs = [g for g in args.gifs if g.strip()]
     if not args.gifs and DEFAULT_GIF.exists():
         args.gifs = [DEFAULT_GIF]
 

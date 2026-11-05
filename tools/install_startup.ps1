@@ -6,12 +6,12 @@ param([Parameter(ValueFromRemainingArguments = $true)][string[]]$AppArgs)
 
 $pythonw = Join-Path (Split-Path (Get-Command python).Source) 'pythonw.exe'
 $script  = Join-Path $PSScriptRoot 'ellora_display.py'
-$quoted  = ($AppArgs | Where-Object { $_ -ne '--' } | ForEach-Object { '"' + $_ + '"' }) -join ' '
+$quoted  = ($AppArgs | Where-Object { $_ -and $_ -ne '--' } | ForEach-Object { '"' + $_ + '"' }) -join ' '
 
 $link = Join-Path ([Environment]::GetFolderPath('Startup')) 'Ellora65 Display.lnk'
 $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
 $shortcut.TargetPath       = $pythonw
-$shortcut.Arguments        = "`"$script`" $quoted"
+$shortcut.Arguments        = if ($quoted) { "`"$script`" $quoted" } else { "`"$script`"" }
 $shortcut.WorkingDirectory = $PSScriptRoot
 $shortcut.Save()
 
